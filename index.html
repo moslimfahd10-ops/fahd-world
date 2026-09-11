@@ -1,301 +1,468 @@
 <!DOCTYPE html>
 <html lang="ar">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FAHD WORLD</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FAHD WORLD</title>
 
-    <style>
-        html, body {
-            margin: 0;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            background: #000;
-            font-family: Arial, sans-serif;
-        }
+<style>
+    * {
+        box-sizing: border-box;
+    }
 
-        #game {
-            width: 100%;
-            height: 100%;
-            display: block;
-        }
+    html, body {
+        margin: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: #87ceeb;
+        font-family: Arial, sans-serif;
+    }
 
-        #loading {
-            position: fixed;
-            inset: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            background: #111;
-            font-size: 28px;
-            z-index: 10;
-        }
+    canvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+    }
 
-        #crosshair {
-            position: fixed;
-            left: 50%;
-            top: 50%;
-            width: 8px;
-            height: 8px;
-            margin-left: -4px;
-            margin-top: -4px;
-            border: 2px solid white;
-            border-radius: 50%;
-            pointer-events: none;
-            display: none;
-        }
+    #loading {
+        position: fixed;
+        inset: 0;
+        z-index: 10;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #111;
+        color: white;
+        font-size: 30px;
+    }
 
-        #info {
-            position: fixed;
-            left: 15px;
-            top: 15px;
-            color: white;
-            background: rgba(0,0,0,.45);
-            padding: 10px 14px;
-            border-radius: 8px;
-            display: none;
-        }
-    </style>
+    #info {
+        position: fixed;
+        top: 15px;
+        left: 15px;
+        z-index: 5;
+        padding: 12px;
+        color: white;
+        background: rgba(0,0,0,.55);
+        border-radius: 8px;
+        line-height: 1.7;
+        user-select: none;
+    }
+
+    #crosshair {
+        position: fixed;
+        left: 50%;
+        top: 50%;
+        width: 12px;
+        height: 12px;
+        margin-left: -6px;
+        margin-top: -6px;
+        border: 2px solid white;
+        border-radius: 50%;
+        pointer-events: none;
+        z-index: 4;
+    }
+
+    #mode {
+        position: fixed;
+        right: 15px;
+        top: 15px;
+        z-index: 5;
+        color: white;
+        background: rgba(0,0,0,.55);
+        padding: 10px 15px;
+        border-radius: 8px;
+        user-select: none;
+    }
+</style>
 </head>
 
 <body>
 
 <div id="loading">FAHD WORLD</div>
 
-<canvas id="game"></canvas>
+<div id="info">
+    <b>التحكم</b><br>
+    W A S D = حركة<br>
+    Space = قفز<br>
+    F = طيران / مشي<br>
+    Ctrl = إظهار / إخفاء الماوس<br>
+    الماوس = النظر
+</div>
+
+<div id="mode">الوضع: مشي</div>
 
 <div id="crosshair"></div>
 
-<div id="info">
-    WASD للحركة<br>
-    الماوس للنظر حولك
-</div>
+<canvas id="game"></canvas>
 
 <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
 
 <script>
 
-    // =========================
-    // إنشاء العالم
-    // =========================
+const scene = new THREE.Scene();
 
-    const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x87ceeb);
 
-    scene.background = new THREE.Color(0x87ceeb);
-
-    scene.fog = new THREE.Fog(0x87ceeb, 30, 180);
-
-
-    // =========================
-    // الكاميرا
-    // =========================
-
-    const camera = new THREE.PerspectiveCamera(
-        75,
-        window.innerWidth / window.innerHeight,
-        0.1,
-        1000
-    );
-
-    camera.position.set(0, 2, 8);
+scene.fog = new THREE.Fog(
+    0x87ceeb,
+    30,
+    180
+);
 
 
-    // =========================
-    // الشاشة
-    // =========================
+// ======================================================
+// الكاميرا
+// ======================================================
 
-    const renderer = new THREE.WebGLRenderer({
-        canvas: document.getElementById("game"),
-        antialias: true
+const camera = new THREE.PerspectiveCamera(
+    75,
+    window.innerWidth / window.innerHeight,
+    0.1,
+    1000
+);
+
+camera.position.set(0, 2, 8);
+
+
+// ======================================================
+// الشاشة
+// ======================================================
+
+const renderer = new THREE.WebGLRenderer({
+    canvas: document.getElementById("game"),
+    antialias: false
+});
+
+renderer.setSize(
+    window.innerWidth,
+    window.innerHeight
+);
+
+renderer.setPixelRatio(
+    Math.min(window.devicePixelRatio, 1.5)
+);
+
+
+// ======================================================
+// الإضاءة
+// ======================================================
+
+const sunlight = new THREE.DirectionalLight(
+    0xffffff,
+    2
+);
+
+sunlight.position.set(
+    50,
+    100,
+    50
+);
+
+scene.add(sunlight);
+
+const ambient = new THREE.AmbientLight(
+    0xffffff,
+    0.45
+);
+
+scene.add(ambient);
+
+
+// ======================================================
+// البلوكات
+// ======================================================
+
+const blocks = [];
+
+
+// خامات مربعة بسيطة
+const grassMaterial =
+    new THREE.MeshStandardMaterial({
+        color: 0x4f9e35
     });
 
-    renderer.setSize(window.innerWidth, window.innerHeight);
+const dirtMaterial =
+    new THREE.MeshStandardMaterial({
+        color: 0x795548
+    });
 
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+const stoneMaterial =
+    new THREE.MeshStandardMaterial({
+        color: 0x777777
+    });
 
-
-    // =========================
-    // الإضاءة
-    // =========================
-
-    const sunlight = new THREE.DirectionalLight(0xffffff, 2);
-
-    sunlight.position.set(50, 100, 30);
-
-    scene.add(sunlight);
-
-
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
-
-    scene.add(ambientLight);
+const woodMaterial =
+    new THREE.MeshStandardMaterial({
+        color: 0x8b5a2b
+    });
 
 
-    // =========================
-    // الأرض
-    // =========================
+// ======================================================
+// إنشاء بلوك
+// ======================================================
 
-    const groundGeometry =
-        new THREE.PlaneGeometry(300, 300);
+function createBlock(
+    x,
+    y,
+    z,
+    material
+) {
 
-    const groundMaterial =
-        new THREE.MeshStandardMaterial({
-            color: 0x4b8f29
-        });
+    const geometry =
+        new THREE.BoxGeometry(
+            2,
+            2,
+            2
+        );
 
-    const ground =
+    const block =
         new THREE.Mesh(
-            groundGeometry,
-            groundMaterial
+            geometry,
+            material
         );
 
-    ground.rotation.x = -Math.PI / 2;
+    block.position.set(
+        x,
+        y,
+        z
+    );
 
-    scene.add(ground);
+    scene.add(block);
 
+    blocks.push(block);
 
-    // =========================
-    // إنشاء مكعبات
-    // =========================
-
-    function createBlock(x, y, z, color) {
-
-        const geometry =
-            new THREE.BoxGeometry(2, 2, 2);
-
-        const material =
-            new THREE.MeshStandardMaterial({
-                color: color
-            });
-
-        const block =
-            new THREE.Mesh(
-                geometry,
-                material
-            );
-
-        block.position.set(x, y, z);
-
-        scene.add(block);
-
-        return block;
-    }
+    return block;
+}
 
 
-    // =========================
-    // مبنى تجريبي
-    // =========================
+// ======================================================
+// الأرض
+// ======================================================
 
-    for (let x = -6; x <= 6; x += 2) {
+for (let x = -40; x <= 40; x += 2) {
+
+    for (let z = -40; z <= 40; z += 2) {
 
         createBlock(
             x,
-            1,
-            -15,
-            0xaaaaaa
+            -1,
+            z,
+            grassMaterial
         );
 
     }
+}
 
 
-    for (let x = -6; x <= 6; x += 2) {
+// ======================================================
+// جدران تجريبية
+// ======================================================
 
-        createBlock(
-            x,
-            3,
-            -15,
-            0xaaaaaa
-        );
+for (let x = -10; x <= 10; x += 2) {
 
-    }
+    createBlock(
+        x,
+        1,
+        -12,
+        stoneMaterial
+    );
 
-
-    // =========================
-    // أشجار بسيطة
-    // =========================
-
-    function createTree(x, z) {
-
-        const trunkGeometry =
-            new THREE.CylinderGeometry(
-                0.4,
-                0.5,
-                3
-            );
-
-        const trunkMaterial =
-            new THREE.MeshStandardMaterial({
-                color: 0x704214
-            });
-
-        const trunk =
-            new THREE.Mesh(
-                trunkGeometry,
-                trunkMaterial
-            );
-
-        trunk.position.set(x, 1.5, z);
-
-        scene.add(trunk);
+    createBlock(
+        x,
+        3,
+        -12,
+        stoneMaterial
+    );
+}
 
 
-        const leavesGeometry =
-            new THREE.SphereGeometry(2, 16, 16);
+// ======================================================
+// مبنى
+// ======================================================
 
-        const leavesMaterial =
-            new THREE.MeshStandardMaterial({
-                color: 0x228b22
-            });
+for (let x = -6; x <= 6; x += 2) {
 
-        const leaves =
-            new THREE.Mesh(
-                leavesGeometry,
-                leavesMaterial
-            );
+    createBlock(
+        x,
+        1,
+        -22,
+        woodMaterial
+    );
 
-        leaves.position.set(x, 4, z);
+    createBlock(
+        x,
+        3,
+        -22,
+        woodMaterial
+    );
 
-        scene.add(leaves);
-    }
-
-
-    createTree(10, -10);
-    createTree(-10, -10);
-    createTree(15, -25);
-    createTree(-15, -25);
+}
 
 
-    // =========================
-    // التحكم
-    // =========================
+for (let z = -22; z <= -12; z += 2) {
 
-    const keys = {};
+    createBlock(
+        -6,
+        1,
+        z,
+        woodMaterial
+    );
 
-    document.addEventListener("keydown", function(event) {
+    createBlock(
+        6,
+        1,
+        z,
+        woodMaterial
+    );
+
+}
+
+
+// ======================================================
+// أشجار
+// ======================================================
+
+function createTree(x, z) {
+
+    createBlock(
+        x,
+        1,
+        z,
+        woodMaterial
+    );
+
+    createBlock(
+        x,
+        3,
+        z,
+        woodMaterial
+    );
+
+    createBlock(
+        x,
+        5,
+        z,
+        grassMaterial
+    );
+
+    createBlock(
+        x + 2,
+        5,
+        z,
+        grassMaterial
+    );
+
+    createBlock(
+        x - 2,
+        5,
+        z,
+        grassMaterial
+    );
+
+    createBlock(
+        x,
+        5,
+        z + 2,
+        grassMaterial
+    );
+
+    createBlock(
+        x,
+        5,
+        z - 2,
+        grassMaterial
+    );
+}
+
+
+createTree(15, -10);
+createTree(-15, -10);
+createTree(20, -25);
+createTree(-20, -25);
+
+
+// ======================================================
+// التحكم
+// ======================================================
+
+const keys = {};
+
+document.addEventListener(
+    "keydown",
+    function(event) {
 
         keys[event.key.toLowerCase()] = true;
 
-    });
+        // منع Space من تحريك الصفحة
+        if (event.code === "Space") {
+            event.preventDefault();
+        }
+
+        // F = طيران
+        if (
+            event.key.toLowerCase() === "f" &&
+            !event.repeat
+        ) {
+
+            flying = !flying;
+
+            document.getElementById(
+                "mode"
+            ).textContent =
+                flying
+                ? "الوضع: طيران"
+                : "الوضع: مشي";
+        }
+
+        // Ctrl = إظهار / إخفاء الماوس
+        if (
+            event.key === "Control" &&
+            !event.repeat
+        ) {
+
+            mouseLocked = !mouseLocked;
+
+            if (mouseLocked) {
+
+                document.body.requestPointerLock();
+
+            } else {
+
+                document.exitPointerLock();
+
+            }
+        }
+    }
+);
 
 
-    document.addEventListener("keyup", function(event) {
+document.addEventListener(
+    "keyup",
+    function(event) {
 
         keys[event.key.toLowerCase()] = false;
 
-    });
+    }
+);
 
 
-    // =========================
-    // تحريك الماوس
-    // =========================
+// ======================================================
+// حركة الماوس
+// ======================================================
 
-    let yaw = 0;
-    let pitch = 0;
+let yaw = 0;
+let pitch = 0;
 
-    document.addEventListener("mousemove", function(event) {
+let mouseLocked = false;
 
-        if (document.pointerLockElement !== document.body)
+
+document.addEventListener(
+    "mousemove",
+    function(event) {
+
+        if (!mouseLocked)
             return;
 
         yaw -= event.movementX * 0.002;
@@ -303,135 +470,379 @@
         pitch -= event.movementY * 0.002;
 
         pitch = Math.max(
-            -Math.PI / 2,
-            Math.min(Math.PI / 2, pitch)
+            -Math.PI / 2 + 0.01,
+            Math.min(
+                Math.PI / 2 - 0.01,
+                pitch
+            )
         );
 
-    });
+    }
+);
 
 
-    document.body.addEventListener("click", function() {
+// الضغط على الشاشة يقفل الماوس
 
-        document.body.requestPointerLock();
+document.body.addEventListener(
+    "click",
+    function() {
 
-    });
+        if (!mouseLocked) {
 
+            mouseLocked = true;
 
-    // =========================
-    // تحديث اللاعب
-    // =========================
-
-    function updatePlayer() {
-
-        const speed = 0.15;
-
-        const direction = new THREE.Vector3();
-
-        camera.getWorldDirection(direction);
-
-        direction.y = 0;
-
-        direction.normalize();
-
-
-        const right =
-            new THREE.Vector3(
-                -direction.z,
-                0,
-                direction.x
-            );
-
-
-        if (keys["w"]) {
-
-            camera.position.addScaledVector(
-                direction,
-                speed
-            );
+            document.body.requestPointerLock();
 
         }
 
+    }
+);
 
-        if (keys["s"]) {
 
-            camera.position.addScaledVector(
-                direction,
-                -speed
+// ======================================================
+// اللاعب
+// ======================================================
+
+const player = {
+
+    width: 0.7,
+
+    height: 1.8,
+
+    depth: 0.7,
+
+    velocityY: 0,
+
+    onGround: false
+
+};
+
+
+let flying = false;
+
+
+// ======================================================
+// فحص التصادم
+// ======================================================
+
+function playerBox(
+    x,
+    y,
+    z
+) {
+
+    return new THREE.Box3(
+        new THREE.Vector3(
+            x - player.width / 2,
+            y,
+            z - player.depth / 2
+        ),
+
+        new THREE.Vector3(
+            x + player.width / 2,
+            y + player.height,
+            z + player.depth / 2
+        )
+    );
+
+}
+
+
+function collides(
+    x,
+    y,
+    z
+) {
+
+    const box =
+        playerBox(x, y, z);
+
+    for (const block of blocks) {
+
+        const blockBox =
+            new THREE.Box3().setFromObject(
+                block
             );
+
+        if (
+            box.intersectsBox(
+                blockBox
+            )
+        ) {
+
+            return true;
 
         }
 
+    }
 
-        if (keys["a"]) {
-
-            camera.position.addScaledVector(
-                right,
-                -speed
-            );
-
-        }
+    return false;
+}
 
 
-        if (keys["d"]) {
+// ======================================================
+// محاولة الحركة مع التصادم
+// ======================================================
 
-            camera.position.addScaledVector(
-                right,
-                speed
-            );
+function moveWithCollision(
+    dx,
+    dy,
+    dz
+) {
 
-        }
+    const oldX =
+        camera.position.x;
+
+    const oldY =
+        camera.position.y;
+
+    const oldZ =
+        camera.position.z;
 
 
-        camera.position.y = 2;
+    // الحركة الأفقية X
+    const newX =
+        oldX + dx;
 
+    if (
+        !collides(
+            newX,
+            oldY - 1.8,
+            oldZ
+        )
+    ) {
 
-        camera.rotation.order = "YXZ";
-
-        camera.rotation.y = yaw;
-
-        camera.rotation.x = pitch;
+        camera.position.x = newX;
 
     }
 
 
-    // =========================
-    // بدء اللعبة
-    // =========================
+    // الحركة الأفقية Z
+    const newZ =
+        oldZ + dz;
 
-    setTimeout(function() {
+    if (
+        !collides(
+            camera.position.x,
+            oldY - 1.8,
+            newZ
+        )
+    ) {
 
-        document.getElementById("loading").style.display = "none";
-
-        document.getElementById("crosshair").style.display = "block";
-
-        document.getElementById("info").style.display = "block";
-
-    }, 1000);
-
-
-    // =========================
-    // تشغيل اللعبة
-    // =========================
-
-    function animate() {
-
-        requestAnimationFrame(animate);
-
-        updatePlayer();
-
-        renderer.render(scene, camera);
+        camera.position.z = newZ;
 
     }
 
 
-    animate();
+    // الحركة الرأسية
+    const newY =
+        oldY + dy;
+
+    if (
+        !collides(
+            camera.position.x,
+            newY - 1.8,
+            camera.position.z
+        )
+    ) {
+
+        camera.position.y = newY;
+
+        player.onGround = false;
+
+    } else {
+
+        if (dy < 0) {
+
+            player.onGround = true;
+
+        }
+
+        player.velocityY = 0;
+
+    }
+
+}
 
 
-    // =========================
-    // تغيير حجم الشاشة
-    // =========================
+// ======================================================
+// تحديث اللاعب
+// ======================================================
 
-    window.addEventListener("resize", function() {
+function updatePlayer() {
+
+    const speed =
+        flying ? 0.22 : 0.12;
+
+
+    const forward =
+        new THREE.Vector3(
+            -Math.sin(yaw),
+            0,
+            -Math.cos(yaw)
+        );
+
+
+    const right =
+        new THREE.Vector3(
+            Math.cos(yaw),
+            0,
+            -Math.sin(yaw)
+        );
+
+
+    let dx = 0;
+    let dz = 0;
+
+
+    if (keys["w"]) {
+
+        dx += forward.x * speed;
+        dz += forward.z * speed;
+
+    }
+
+
+    if (keys["s"]) {
+
+        dx -= forward.x * speed;
+        dz -= forward.z * speed;
+
+    }
+
+
+    if (keys["d"]) {
+
+        dx += right.x * speed;
+        dz += right.z * speed;
+
+    }
+
+
+    if (keys["a"]) {
+
+        dx -= right.x * speed;
+        dz -= right.z * speed;
+
+    }
+
+
+    // ==================================================
+    // الطيران
+    // ==================================================
+
+    if (flying) {
+
+        let dy = 0;
+
+        if (keys[" "]) {
+
+            dy += speed;
+
+        }
+
+        if (keys["shift"]) {
+
+            dy -= speed;
+
+        }
+
+        moveWithCollision(
+            dx,
+            dy,
+            dz
+        );
+
+    }
+
+
+    // ==================================================
+    // المشي والجاذبية
+    // ==================================================
+
+    else {
+
+        player.velocityY -= 0.018;
+
+        // القفز
+        if (
+            keys[" "] &&
+            player.onGround
+        ) {
+
+            player.velocityY = 0.32;
+
+            player.onGround = false;
+
+        }
+
+        moveWithCollision(
+            dx,
+            player.velocityY,
+            dz
+        );
+
+    }
+
+
+    // ==================================================
+    // دوران الكاميرا
+    // ==================================================
+
+    camera.rotation.order = "YXZ";
+
+    camera.rotation.y = yaw;
+
+    camera.rotation.x = pitch;
+
+}
+
+
+// ======================================================
+// بدء اللعبة
+// ======================================================
+
+setTimeout(
+    function() {
+
+        document.getElementById(
+            "loading"
+        ).style.display = "none";
+
+    },
+    1000
+);
+
+
+// ======================================================
+// تشغيل اللعبة
+// ======================================================
+
+function animate() {
+
+    requestAnimationFrame(
+        animate
+    );
+
+    updatePlayer();
+
+    renderer.render(
+        scene,
+        camera
+    );
+
+}
+
+animate();
+
+
+// ======================================================
+// تغيير حجم الشاشة
+// ======================================================
+
+window.addEventListener(
+    "resize",
+    function() {
 
         camera.aspect =
             window.innerWidth /
@@ -444,7 +855,8 @@
             window.innerHeight
         );
 
-    });
+    }
+);
 
 </script>
 
