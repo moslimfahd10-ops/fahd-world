@@ -2,860 +2,3301 @@
 <html lang="ar">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>FAHD WORLD</title>
 
 <style>
-    * {
-        box-sizing: border-box;
-    }
+*{box-sizing:border-box}
 
-    html, body {
-        margin: 0;
-        width: 100%;
-        height: 100%;
-        overflow: hidden;
-        background: #87ceeb;
-        font-family: Arial, sans-serif;
-    }
+html,body{
+    margin:0;
+    width:100%;
+    height:100%;
+    overflow:hidden;
+    background:#000;
+    font-family:Arial,sans-serif;
+}
 
-    canvas {
-        display: block;
-        width: 100%;
-        height: 100%;
-    }
+canvas{
+    display:block;
+}
 
-    #loading {
-        position: fixed;
-        inset: 0;
-        z-index: 10;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: #111;
-        color: white;
-        font-size: 30px;
-    }
+#hud{
+    position:fixed;
+    top:12px;
+    left:12px;
+    z-index:20;
+    color:white;
+    text-shadow:2px 2px #000;
+    font-weight:bold;
+    pointer-events:none;
+}
 
-    #info {
-        position: fixed;
-        top: 15px;
-        left: 15px;
-        z-index: 5;
-        padding: 12px;
-        color: white;
-        background: rgba(0,0,0,.55);
-        border-radius: 8px;
-        line-height: 1.7;
-        user-select: none;
-    }
+.bar{
+    width:210px;
+    height:20px;
+    border:2px solid white;
+    background:#222;
+    margin-bottom:6px;
+    position:relative;
+}
 
-    #crosshair {
-        position: fixed;
-        left: 50%;
-        top: 50%;
-        width: 12px;
-        height: 12px;
-        margin-left: -6px;
-        margin-top: -6px;
-        border: 2px solid white;
-        border-radius: 50%;
-        pointer-events: none;
-        z-index: 4;
-    }
+.fill{
+    width:100%;
+    height:100%;
+}
 
-    #mode {
-        position: fixed;
-        right: 15px;
-        top: 15px;
-        z-index: 5;
-        color: white;
-        background: rgba(0,0,0,.55);
-        padding: 10px 15px;
-        border-radius: 8px;
-        user-select: none;
-    }
+#hpFill{background:#e33}
+#hungerFill{background:#e8a900}
+
+.bar span{
+    position:absolute;
+    inset:0;
+    text-align:center;
+    font-size:12px;
+    padding-top:1px;
+}
+
+#info{
+    line-height:20px;
+    font-size:14px;
+}
+
+#crosshair{
+    position:fixed;
+    left:50%;
+    top:50%;
+    width:18px;
+    height:18px;
+    transform:translate(-50%,-50%);
+    z-index:30;
+    pointer-events:none;
+}
+
+#crosshair:before,
+#crosshair:after{
+    content:"";
+    position:absolute;
+    background:white;
+    box-shadow:0 0 3px black;
+}
+
+#crosshair:before{
+    width:18px;
+    height:2px;
+    top:8px;
+}
+
+#crosshair:after{
+    width:2px;
+    height:18px;
+    left:8px;
+}
+
+#hotbar{
+    position:fixed;
+    bottom:12px;
+    left:50%;
+    transform:translateX(-50%);
+    display:flex;
+    gap:4px;
+    z-index:20;
+}
+
+.slot{
+    width:58px;
+    height:58px;
+    border:3px solid #666;
+    background:rgba(15,15,15,.88);
+    color:white;
+    position:relative;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    font-size:10px;
+}
+
+.slot.selected{
+    border-color:white;
+    box-shadow:0 0 10px white;
+}
+
+.slot .num{
+    position:absolute;
+    left:4px;
+    top:2px;
+    font-size:10px;
+}
+
+.slot .count{
+    position:absolute;
+    right:4px;
+    bottom:2px;
+    font-size:12px;
+}
+
+#message{
+    position:fixed;
+    left:50%;
+    top:16%;
+    transform:translateX(-50%);
+    color:white;
+    font-size:20px;
+    font-weight:bold;
+    text-shadow:2px 2px #000;
+    z-index:50;
+    opacity:0;
+    pointer-events:none;
+    transition:opacity .2s;
+}
+
+#controls{
+    position:fixed;
+    left:12px;
+    bottom:82px;
+    z-index:20;
+    color:white;
+    font-size:12px;
+    line-height:18px;
+    text-shadow:2px 2px #000;
+    pointer-events:none;
+}
+
+.panel{
+    display:none;
+    position:fixed;
+    z-index:100;
+    left:50%;
+    top:50%;
+    transform:translate(-50%,-50%);
+    width:560px;
+    max-width:92vw;
+    max-height:82vh;
+    overflow:auto;
+    background:rgba(15,15,15,.97);
+    border:3px solid #777;
+    border-radius:10px;
+    color:white;
+    padding:18px;
+}
+
+.panel h2{
+    text-align:center;
+    margin-top:0;
+}
+
+button{
+    background:#333;
+    color:white;
+    border:1px solid #888;
+    padding:9px 14px;
+    margin:4px;
+    border-radius:5px;
+    cursor:pointer;
+}
+
+button:hover{
+    background:#555;
+}
+
+.grid{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:7px;
+}
+
+.item{
+    background:#222;
+    border:1px solid #555;
+    padding:10px;
+    text-align:center;
+}
+
+.recipe{
+    background:#222;
+    border:1px solid #555;
+    padding:10px;
+    margin:7px 0;
+}
+
+#deathPanel{
+    text-align:center;
+}
+
+#deathPanel h2{
+    color:#f33;
+}
 </style>
 </head>
 
 <body>
 
-<div id="loading">FAHD WORLD</div>
+<div id="hud">
 
-<div id="info">
-    <b>التحكم</b><br>
-    W A S D = حركة<br>
-    Space = قفز<br>
-    F = طيران / مشي<br>
-    Ctrl = إظهار / إخفاء الماوس<br>
-    الماوس = النظر
+    <div class="bar">
+        <div id="hpFill" class="fill"></div>
+        <span id="hpText">HP 100/100</span>
+    </div>
+
+    <div class="bar">
+        <div id="hungerFill" class="fill"></div>
+        <span id="hungerText">الجوع 100/100</span>
+    </div>
+
+    <div id="info">
+        المستوى: <span id="level">1</span><br>
+        XP: <span id="xp">0</span><br>
+        المال: $<span id="money">100</span><br>
+        الوضع: <span id="mode">الأرض</span>
+    </div>
+
 </div>
-
-<div id="mode">الوضع: مشي</div>
 
 <div id="crosshair"></div>
 
-<canvas id="game"></canvas>
+<div id="message"></div>
+
+<div id="controls">
+W A S D = حركة<br>
+Space = قفز<br>
+V = منظور أول / ثالث<br>
+F = طيران<br>
+E = الحقيبة<br>
+C = التصنيع<br>
+B = المتجر<br>
+زر يسار = كسر / هجوم<br>
+زر يمين = وضع بلوك
+</div>
+
+<div id="hotbar"></div>
+
+<div id="inventoryPanel" class="panel">
+    <h2>الحقيبة</h2>
+    <div id="inventoryGrid" class="grid"></div>
+    <button onclick="closePanels()">إغلاق</button>
+</div>
+
+<div id="craftPanel" class="panel">
+    <h2>التصنيع</h2>
+    <div id="recipes"></div>
+    <button onclick="closePanels()">إغلاق</button>
+</div>
+
+<div id="shopPanel" class="panel">
+    <h2>المتجر</h2>
+    <div id="shopItems" class="grid"></div>
+    <button onclick="closePanels()">إغلاق</button>
+</div>
+
+<div id="deathPanel" class="panel">
+    <h2>لقد مت!</h2>
+    <p>كل الأشياء التي كانت معك سقطت في مكان موتك.</p>
+    <p>ارجع إلى المكان لاستعادتها.</p>
+    <button onclick="respawn()">العودة للحياة</button>
+</div>
 
 <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
 
 <script>
 
+/* =========================================================
+   FAHD WORLD
+   ========================================================= */
+
 const scene = new THREE.Scene();
 
-scene.background = new THREE.Color(0x87ceeb);
+scene.background = new THREE.Color(0x87c9ff);
 
 scene.fog = new THREE.Fog(
-    0x87ceeb,
-    30,
-    180
+    0x87c9ff,
+    35,
+    110
 );
-
-
-// ======================================================
-// الكاميرا
-// ======================================================
 
 const camera = new THREE.PerspectiveCamera(
     75,
-    window.innerWidth / window.innerHeight,
-    0.1,
-    1000
+    innerWidth / innerHeight,
+    0.05,
+    250
 );
 
-camera.position.set(0, 2, 8);
-
-
-// ======================================================
-// الشاشة
-// ======================================================
-
 const renderer = new THREE.WebGLRenderer({
-    canvas: document.getElementById("game"),
-    antialias: false
+    antialias:false
 });
 
 renderer.setSize(
-    window.innerWidth,
-    window.innerHeight
+    innerWidth,
+    innerHeight
 );
 
 renderer.setPixelRatio(
-    Math.min(window.devicePixelRatio, 1.5)
+    Math.min(devicePixelRatio,1.5)
+);
+
+renderer.shadowMap.enabled=true;
+
+document.body.appendChild(
+    renderer.domElement
 );
 
 
-// ======================================================
-// الإضاءة
-// ======================================================
+/* =========================================================
+   LIGHT
+   ========================================================= */
 
-const sunlight = new THREE.DirectionalLight(
+const hemi = new THREE.HemisphereLight(
     0xffffff,
-    2
+    0x555555,
+    1
 );
 
-sunlight.position.set(
-    50,
-    100,
-    50
-);
+scene.add(hemi);
 
-scene.add(sunlight);
-
-const ambient = new THREE.AmbientLight(
+const sun = new THREE.DirectionalLight(
     0xffffff,
-    0.45
+    1.4
 );
 
-scene.add(ambient);
+sun.position.set(
+    40,
+    90,
+    30
+);
+
+scene.add(sun);
 
 
-// ======================================================
-// البلوكات
-// ======================================================
+/* =========================================================
+   TEXTURE MAKER
+   ========================================================= */
 
-const blocks = [];
+function texture(draw){
 
+    const c=document.createElement("canvas");
 
-// خامات مربعة بسيطة
-const grassMaterial =
-    new THREE.MeshStandardMaterial({
-        color: 0x4f9e35
-    });
+    c.width=32;
+    c.height=32;
 
-const dirtMaterial =
-    new THREE.MeshStandardMaterial({
-        color: 0x795548
-    });
+    const ctx=c.getContext("2d");
 
-const stoneMaterial =
-    new THREE.MeshStandardMaterial({
-        color: 0x777777
-    });
+    draw(ctx);
 
-const woodMaterial =
-    new THREE.MeshStandardMaterial({
-        color: 0x8b5a2b
-    });
+    const t=new THREE.CanvasTexture(c);
+
+    t.magFilter=THREE.NearestFilter;
+    t.minFilter=THREE.NearestFilter;
+
+    return t;
+}
 
 
-// ======================================================
-// إنشاء بلوك
-// ======================================================
+/* =========================================================
+   TEXTURES
+   ========================================================= */
 
-function createBlock(
-    x,
-    y,
-    z,
-    material
-) {
+const T={};
 
-    const geometry =
-        new THREE.BoxGeometry(
-            2,
+T.grass=texture(ctx=>{
+
+    ctx.fillStyle="#4b9b36";
+    ctx.fillRect(0,0,32,32);
+
+    for(let i=0;i<70;i++){
+
+        ctx.fillStyle=
+            i%2 ? "#34782b" : "#6bbd4b";
+
+        ctx.fillRect(
+            Math.random()*32,
+            Math.random()*32,
             2,
             2
         );
+    }
+});
 
-    const block =
+T.dirt=texture(ctx=>{
+
+    ctx.fillStyle="#79502d";
+    ctx.fillRect(0,0,32,32);
+
+    for(let i=0;i<70;i++){
+
+        ctx.fillStyle=
+            i%2 ? "#5a371e" : "#96683c";
+
+        ctx.fillRect(
+            Math.random()*32,
+            Math.random()*32,
+            2,
+            2
+        );
+    }
+});
+
+T.stone=texture(ctx=>{
+
+    ctx.fillStyle="#777";
+    ctx.fillRect(0,0,32,32);
+
+    for(let i=0;i<70;i++){
+
+        ctx.fillStyle=
+            i%2 ? "#666" : "#999";
+
+        ctx.fillRect(
+            Math.random()*32,
+            Math.random()*32,
+            3,
+            3
+        );
+    }
+});
+
+T.sand=texture(ctx=>{
+
+    ctx.fillStyle="#d9c276";
+    ctx.fillRect(0,0,32,32);
+
+    for(let i=0;i<60;i++){
+
+        ctx.fillStyle=
+            i%2 ? "#bca759" : "#eadb98";
+
+        ctx.fillRect(
+            Math.random()*32,
+            Math.random()*32,
+            2,
+            2
+        );
+    }
+});
+
+T.brick=texture(ctx=>{
+
+    ctx.fillStyle="#a94d38";
+    ctx.fillRect(0,0,32,32);
+
+    ctx.strokeStyle="#632d23";
+    ctx.lineWidth=2;
+
+    for(let y=7;y<32;y+=9){
+
+        ctx.beginPath();
+        ctx.moveTo(0,y);
+        ctx.lineTo(32,y);
+        ctx.stroke();
+    }
+
+    for(let y=0;y<32;y+=18){
+
+        for(let x=0;x<32;x+=16){
+
+            ctx.beginPath();
+            ctx.moveTo(x,y);
+            ctx.lineTo(x,y+8);
+            ctx.stroke();
+        }
+    }
+});
+
+T.glass=texture(ctx=>{
+
+    ctx.fillStyle="#78d7ff";
+    ctx.fillRect(0,0,32,32);
+
+    ctx.strokeStyle="#eaffff";
+    ctx.lineWidth=2;
+
+    ctx.beginPath();
+    ctx.moveTo(3,28);
+    ctx.lineTo(28,3);
+    ctx.stroke();
+});
+
+T.wood=texture(ctx=>{
+
+    /*
+      الخشب المطلوب:
+      أبيض + خطوط سوداء
+    */
+
+    ctx.fillStyle="#f2f2f2";
+    ctx.fillRect(0,0,32,32);
+
+    ctx.fillStyle="#111";
+
+    for(let x=2;x<32;x+=7){
+        ctx.fillRect(x,0,2,32);
+    }
+
+    for(let y=9;y<32;y+=14){
+        ctx.fillRect(0,y,32,2);
+    }
+});
+
+T.leaves=texture(ctx=>{
+
+    ctx.fillStyle="#27752f";
+    ctx.fillRect(0,0,32,32);
+
+    for(let i=0;i<90;i++){
+
+        ctx.fillStyle=
+            i%2 ? "#3e9842" : "#185c25";
+
+        ctx.fillRect(
+            Math.random()*32,
+            Math.random()*32,
+            3,
+            3
+        );
+    }
+});
+
+T.coal=texture(ctx=>{
+
+    ctx.fillStyle="#777";
+    ctx.fillRect(0,0,32,32);
+
+    for(let i=0;i<18;i++){
+
+        ctx.fillStyle="#151515";
+
+        ctx.fillRect(
+            Math.random()*27,
+            Math.random()*27,
+            5,
+            5
+        );
+    }
+});
+
+T.iron=texture(ctx=>{
+
+    ctx.fillStyle="#777";
+    ctx.fillRect(0,0,32,32);
+
+    for(let i=0;i<18;i++){
+
+        ctx.fillStyle="#c48c6a";
+
+        ctx.fillRect(
+            Math.random()*27,
+            Math.random()*27,
+            5,
+            5
+        );
+    }
+});
+
+T.gold=texture(ctx=>{
+
+    ctx.fillStyle="#777";
+    ctx.fillRect(0,0,32,32);
+
+    for(let i=0;i<18;i++){
+
+        ctx.fillStyle="#e5bd22";
+
+        ctx.fillRect(
+            Math.random()*27,
+            Math.random()*27,
+            5,
+            5
+        );
+    }
+});
+
+
+/* =========================================================
+   BLOCKS
+   ========================================================= */
+
+const BLOCKS={
+
+    grass:{
+        name:"عشب",
+        drop:"grass",
+        texture:T.grass
+    },
+
+    dirt:{
+        name:"تراب",
+        drop:"dirt",
+        texture:T.dirt
+    },
+
+    stone:{
+        name:"حجر",
+        drop:"stone",
+        texture:T.stone
+    },
+
+    sand:{
+        name:"رمل",
+        drop:"sand",
+        texture:T.sand
+    },
+
+    brick:{
+        name:"طوب",
+        drop:"brick",
+        texture:T.brick
+    },
+
+    glass:{
+        name:"زجاج",
+        drop:"glass",
+        texture:T.glass,
+        transparent:true
+    },
+
+    wood:{
+        name:"خشب",
+        drop:"wood",
+        texture:T.wood
+    },
+
+    leaves:{
+        name:"أوراق",
+        drop:"leaves",
+        texture:T.leaves
+    },
+
+    coal:{
+        name:"فحم",
+        drop:"coal",
+        texture:T.coal
+    },
+
+    iron:{
+        name:"حديد",
+        drop:"iron",
+        texture:T.iron
+    },
+
+    gold:{
+        name:"ذهب",
+        drop:"gold",
+        texture:T.gold
+    }
+};
+
+const materials={};
+
+for(const b in BLOCKS){
+
+    materials[b]=
+        new THREE.MeshLambertMaterial({
+
+            map:BLOCKS[b].texture,
+
+            transparent:
+                !!BLOCKS[b].transparent,
+
+            opacity:
+                BLOCKS[b].transparent
+                ? .65
+                : 1
+        });
+}
+
+const cube=
+    new THREE.BoxGeometry(
+        1,1,1
+    );
+
+
+/* =========================================================
+   WORLD
+   ========================================================= */
+
+const WORLD_SIZE=100;
+
+const world=new Map();
+
+const visibleMeshes=new Map();
+
+function K(x,y,z){
+
+    return `${x},${y},${z}`;
+}
+
+function setBlock(x,y,z,type){
+
+    world.set(
+        K(x,y,z),
+        type
+    );
+}
+
+function getBlock(x,y,z){
+
+    return world.get(
+        K(x,y,z)
+    );
+}
+
+function removeBlock(x,y,z){
+
+    world.delete(
+        K(x,y,z)
+    );
+}
+
+
+/* =========================================================
+   RANDOM / TERRAIN
+   ========================================================= */
+
+function random2(x,z){
+
+    const n=
+        Math.sin(
+            x*127.1+
+            z*311.7
+        )*
+        43758.5453123;
+
+    return n-
+        Math.floor(n);
+}
+
+function heightAt(x,z){
+
+    const a=
+        Math.sin(x*.06)*3;
+
+    const b=
+        Math.cos(z*.07)*3;
+
+    const c=
+        Math.sin((x+z)*.025)*5;
+
+    const d=
+        Math.cos((x-z)*.035)*2;
+
+    return Math.floor(
+        8+a+b+c+d
+    );
+}
+
+
+/* =========================================================
+   GENERATE TERRAIN
+   ========================================================= */
+
+function generateWorld(){
+
+    for(
+        let x=-WORLD_SIZE;
+        x<WORLD_SIZE;
+        x++
+    ){
+
+        for(
+            let z=-WORLD_SIZE;
+            z<WORLD_SIZE;
+            z++
+        ){
+
+            const h=
+                heightAt(x,z);
+
+            for(
+                let y=0;
+                y<=h;
+                y++
+            ){
+
+                let type="stone";
+
+                if(y===h){
+
+                    type=
+                        h<=5
+                        ? "sand"
+                        : "grass";
+                }
+
+                else if(y>=h-2){
+
+                    type="dirt";
+                }
+
+                else{
+
+                    const r=
+                        random2(
+                            x+y*3,
+                            z-y*2
+                        );
+
+                    if(r>.985)
+                        type="gold";
+
+                    else if(r>.955)
+                        type="iron";
+
+                    else if(r>.91)
+                        type="coal";
+                }
+
+                setBlock(
+                    x,y,z,type
+                );
+            }
+
+            /* TREE */
+
+            if(
+                h>=7 &&
+                random2(
+                    x+900,
+                    z+900
+                )>.97 &&
+                Math.abs(x)>4 &&
+                Math.abs(z)>4
+            ){
+
+                for(let y=1;y<=5;y++){
+
+                    setBlock(
+                        x,
+                        h+y,
+                        z,
+                        "wood"
+                    );
+                }
+
+                for(
+                    let dx=-2;
+                    dx<=2;
+                    dx++
+                ){
+
+                    for(
+                        let dz=-2;
+                        dz<=2;
+                        dz++
+                    ){
+
+                        for(
+                            let dy=3;
+                            dy<=6;
+                            dy++
+                        ){
+
+                            const distance=
+                                Math.abs(dx)+
+                                Math.abs(dz)+
+                                Math.abs(dy-5);
+
+                            if(distance<=4){
+
+                                if(
+                                    !getBlock(
+                                        x+dx,
+                                        h+dy,
+                                        z+dz
+                                    )
+                                ){
+
+                                    setBlock(
+                                        x+dx,
+                                        h+dy,
+                                        z+dz,
+                                        "leaves"
+                                    );
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+/* =========================================================
+   ONLY RENDER EXPOSED BLOCKS
+   ========================================================= */
+
+function exposed(x,y,z){
+
+    return(
+        !getBlock(x+1,y,z) ||
+        !getBlock(x-1,y,z) ||
+        !getBlock(x,y+1,z) ||
+        !getBlock(x,y-1,z) ||
+        !getBlock(x,y,z+1) ||
+        !getBlock(x,y,z-1)
+    );
+}
+
+function addMesh(x,y,z,type){
+
+    const id=K(x,y,z);
+
+    if(visibleMeshes.has(id))
+        return;
+
+    if(!exposed(x,y,z))
+        return;
+
+    const mesh=
         new THREE.Mesh(
-            geometry,
+            cube,
+            materials[type]
+        );
+
+    mesh.position.set(
+        x+.5,
+        y+.5,
+        z+.5
+    );
+
+    mesh.userData={
+        x:x,
+        y:y,
+        z:z,
+        type:type
+    };
+
+    mesh.castShadow=true;
+    mesh.receiveShadow=true;
+
+    scene.add(mesh);
+
+    visibleMeshes.set(
+        id,
+        mesh
+    );
+}
+
+function removeMesh(x,y,z){
+
+    const id=K(x,y,z);
+
+    const mesh=
+        visibleMeshes.get(id);
+
+    if(!mesh)
+        return;
+
+    scene.remove(mesh);
+
+    visibleMeshes.delete(id);
+}
+
+
+/* =========================================================
+   RENDER AREA
+   ========================================================= */
+
+const RENDER_DISTANCE=30;
+
+function updateVisibleWorld(){
+
+    const px=
+        Math.floor(player.position.x);
+
+    const pz=
+        Math.floor(player.position.z);
+
+    /* remove far blocks */
+
+    for(
+        const [id,mesh]
+        of visibleMeshes
+    ){
+
+        const d=
+            mesh.userData;
+
+        if(
+            Math.abs(d.x-px)>
+                RENDER_DISTANCE ||
+            Math.abs(d.z-pz)>
+                RENDER_DISTANCE
+        ){
+
+            scene.remove(mesh);
+
+            visibleMeshes.delete(id);
+        }
+    }
+
+    /* add nearby blocks */
+
+    for(
+        const [id,type]
+        of world
+    ){
+
+        const p=
+            id.split(",");
+
+        const x=
+            Number(p[0]);
+
+        const y=
+            Number(p[1]);
+
+        const z=
+            Number(p[2]);
+
+        if(
+            Math.abs(x-px)<=
+                RENDER_DISTANCE &&
+            Math.abs(z-pz)<=
+                RENDER_DISTANCE
+        ){
+
+            addMesh(
+                x,y,z,type
+            );
+        }
+    }
+}
+
+
+/* =========================================================
+   PLAYER
+   ========================================================= */
+
+const player={
+
+    position:new THREE.Vector3(
+        0,
+        heightAt(0,0)+2,
+        0
+    ),
+
+    velocity:new THREE.Vector3(),
+
+    hp:100,
+
+    hunger:100,
+
+    level:1,
+
+    xp:0,
+
+    money:100,
+
+    yaw:0,
+
+    pitch:0,
+
+    flying:false,
+
+    thirdPerson:false,
+
+    onGround:false
+};
+
+
+/* =========================================================
+   INVENTORY
+   ========================================================= */
+
+const inventory={
+
+    grass:0,
+    dirt:0,
+    stone:0,
+    sand:0,
+    brick:0,
+    glass:0,
+    wood:0,
+    leaves:0,
+    coal:0,
+    iron:0,
+    gold:0,
+
+    planks:0,
+
+    food:5,
+
+    stone_pick:1,
+    iron_pick:0,
+
+    sword:1,
+
+    hammer:0,
+
+    blaster:0,
+    ammo:0,
+
+    phone:0,
+    screen:0,
+    computer:0
+};
+
+const hotbar=[
+
+    "grass",
+    "dirt",
+    "stone",
+    "wood",
+    "sand",
+    "brick",
+    "glass",
+    "food",
+    "sword",
+    "hammer"
+];
+
+let selectedSlot=0;
+
+
+/* =========================================================
+   ITEM NAMES
+   ========================================================= */
+
+const NAMES={
+
+    grass:"عشب",
+    dirt:"تراب",
+    stone:"حجر",
+    sand:"رمل",
+    brick:"طوب",
+    glass:"زجاج",
+    wood:"خشب",
+    leaves:"أوراق",
+    coal:"فحم",
+    iron:"حديد",
+    gold:"ذهب",
+
+    planks:"ألواح",
+
+    food:"طعام",
+
+    stone_pick:"معول حجري",
+    iron_pick:"معول حديد",
+
+    sword:"سيف",
+    hammer:"مطرقة",
+
+    blaster:"سلاح طاقة",
+    ammo:"ذخيرة",
+
+    phone:"هاتف",
+    screen:"شاشة",
+    computer:"كمبيوتر"
+};
+
+function itemName(item){
+
+    return NAMES[item]||item;
+}
+
+function addItem(item,count=1){
+
+    if(
+        inventory[item]===undefined
+    ){
+
+        inventory[item]=0;
+    }
+
+    inventory[item]+=count;
+
+    showMessage(
+        "+"+
+        count+
+        " "+
+        itemName(item)
+    );
+
+    updateUI();
+}
+
+function removeItem(item,count=1){
+
+    if(
+        (inventory[item]||0)<
+        count
+    ){
+
+        return false;
+    }
+
+    inventory[item]-=count;
+
+    updateUI();
+
+    return true;
+}
+
+
+/* =========================================================
+   HOTBAR
+   ========================================================= */
+
+function drawHotbar(){
+
+    const bar=
+        document.getElementById(
+            "hotbar"
+        );
+
+    bar.innerHTML="";
+
+    hotbar.forEach(
+        (item,index)=>{
+
+            const div=
+                document.createElement(
+                    "div"
+                );
+
+            div.className=
+                "slot"+
+                (
+                    index===selectedSlot
+                    ? " selected"
+                    : ""
+                );
+
+            div.innerHTML=
+                `
+                <span class="num">
+                    ${index+1}
+                </span>
+
+                <b>
+                    ${itemName(item)}
+                </b>
+
+                <span class="count">
+                    ${inventory[item]||0}
+                </span>
+                `;
+
+            bar.appendChild(div);
+        }
+    );
+}
+
+
+/* =========================================================
+   INVENTORY
+   ========================================================= */
+
+function drawInventory(){
+
+    const grid=
+        document.getElementById(
+            "inventoryGrid"
+        );
+
+    grid.innerHTML="";
+
+    for(
+        const item in inventory
+    ){
+
+        if(
+            inventory[item]<=0
+        )
+            continue;
+
+        const div=
+            document.createElement(
+                "div"
+            );
+
+        div.className="item";
+
+        div.innerHTML=
+            `
+            <b>${itemName(item)}</b>
+            <br>
+            ${inventory[item]}
+            `;
+
+        grid.appendChild(div);
+    }
+}
+
+
+/* =========================================================
+   CRAFTING
+   ========================================================= */
+
+const recipes=[
+
+    {
+        name:"ألواح خشب",
+        input:"wood",
+        amount:1,
+        output:"planks",
+        outputAmount:4
+    },
+
+    {
+        name:"معول حجري",
+        input:"stone",
+        amount:3,
+        output:"stone_pick",
+        outputAmount:1
+    },
+
+    {
+        name:"معول حديد",
+        input:"iron",
+        amount:3,
+        output:"iron_pick",
+        outputAmount:1
+    },
+
+    {
+        name:"سيف",
+        input:"iron",
+        amount:2,
+        output:"sword",
+        outputAmount:1
+    },
+
+    {
+        name:"مطرقة",
+        input:"iron",
+        amount:4,
+        output:"hammer",
+        outputAmount:1
+    },
+
+    {
+        name:"ذخيرة",
+        input:"iron",
+        amount:1,
+        output:"ammo",
+        outputAmount:10
+    }
+];
+
+function drawRecipes(){
+
+    const box=
+        document.getElementById(
+            "recipes"
+        );
+
+    box.innerHTML="";
+
+    recipes.forEach(
+        (r,index)=>{
+
+            const div=
+                document.createElement(
+                    "div"
+                );
+
+            div.className="recipe";
+
+            div.innerHTML=
+                `
+                <b>${r.name}</b>
+                <br>
+                ${r.amount}
+                ×
+                ${itemName(r.input)}
+                →
+                ${r.outputAmount}
+                ×
+                ${itemName(r.output)}
+                <br>
+
+                <button
+                    onclick="craft(${index})"
+                >
+                    تصنيع
+                </button>
+                `;
+
+            box.appendChild(div);
+        }
+    );
+}
+
+function craft(index){
+
+    const r=recipes[index];
+
+    if(
+        (inventory[r.input]||0)<
+        r.amount
+    ){
+
+        showMessage(
+            "المواد غير كافية"
+        );
+
+        return;
+    }
+
+    removeItem(
+        r.input,
+        r.amount
+    );
+
+    addItem(
+        r.output,
+        r.outputAmount
+    );
+
+    gainXP(5);
+}
+
+
+/* =========================================================
+   SHOP
+   ========================================================= */
+
+const shop=[
+
+    ["food","طعام",10,5],
+    ["stone_pick","معول حجري",30,1],
+    ["iron_pick","معول حديد",80,1],
+    ["sword","سيف",60,1],
+    ["hammer","مطرقة",70,1],
+    ["blaster","سلاح طاقة",150,1],
+    ["ammo","ذخيرة",20,10],
+    ["phone","هاتف",200,1],
+    ["screen","شاشة",300,1],
+    ["computer","كمبيوتر",500,1]
+];
+
+function drawShop(){
+
+    const box=
+        document.getElementById(
+            "shopItems"
+        );
+
+    box.innerHTML="";
+
+    shop.forEach(
+        (s,index)=>{
+
+            const div=
+                document.createElement(
+                    "div"
+                );
+
+            div.className="item";
+
+            div.innerHTML=
+                `
+                <b>${s[1]}</b>
+                <br>
+                $${s[2]}
+                <br>
+                <button
+                    onclick="buy(${index})"
+                >
+                    شراء
+                </button>
+                `;
+
+            box.appendChild(div);
+        }
+    );
+}
+
+function buy(index){
+
+    const s=shop[index];
+
+    if(player.money<s[2]){
+
+        showMessage(
+            "المال غير كافي"
+        );
+
+        return;
+    }
+
+    player.money-=s[2];
+
+    addItem(
+        s[0],
+        s[3]
+    );
+
+    saveGame();
+    updateUI();
+}
+
+
+/* =========================================================
+   PANELS
+   ========================================================= */
+
+function closePanels(){
+
+    document
+        .querySelectorAll(".panel")
+        .forEach(
+            p=>p.style.display="none"
+        );
+
+    if(
+        document.pointerLockElement===
+        null
+    ){
+
+        renderer.domElement.requestPointerLock?.();
+    }
+}
+
+function openPanel(id){
+
+    document
+        .querySelectorAll(".panel")
+        .forEach(
+            p=>p.style.display="none"
+        );
+
+    document.getElementById(id)
+        .style.display="block";
+
+    document.exitPointerLock?.();
+
+    if(id==="inventoryPanel")
+        drawInventory();
+
+    if(id==="craftPanel")
+        drawRecipes();
+
+    if(id==="shopPanel")
+        drawShop();
+}
+
+
+/* =========================================================
+   KEYBOARD
+   ========================================================= */
+
+const keys={};
+
+addEventListener(
+    "keydown",
+    e=>{
+
+        keys[e.code]=true;
+
+        if(
+            e.code.startsWith("Digit")
+        ){
+
+            const n=
+                Number(
+                    e.code.substring(5)
+                )-1;
+
+            if(
+                n>=0 &&
+                n<hotbar.length
+            ){
+
+                selectedSlot=n;
+
+                drawHotbar();
+            }
+        }
+
+        if(e.code==="KeyE")
+            openPanel(
+                "inventoryPanel"
+            );
+
+        if(e.code==="KeyC")
+            openPanel(
+                "craftPanel"
+            );
+
+        if(e.code==="KeyB")
+            openPanel(
+                "shopPanel"
+            );
+
+        if(e.code==="KeyV"){
+
+            player.thirdPerson=
+                !player.thirdPerson;
+
+            showMessage(
+                player.thirdPerson
+                ? "منظور ثالث"
+                : "منظور أول"
+            );
+        }
+
+        if(e.code==="KeyF"){
+
+            player.flying=
+                !player.flying;
+
+            player.velocity.y=0;
+
+            showMessage(
+                player.flying
+                ? "الطيران تشغيل"
+                : "الطيران إيقاف"
+            );
+        }
+
+        if(e.code==="Escape")
+            closePanels();
+    }
+);
+
+addEventListener(
+    "keyup",
+    e=>{
+        keys[e.code]=false;
+    }
+);
+
+
+/* =========================================================
+   MOUSE LOOK
+   ========================================================= */
+
+let locked=false;
+
+renderer.domElement.addEventListener(
+    "click",
+    ()=>{
+
+        const panelOpen=
+            [...document.querySelectorAll(".panel")]
+            .some(
+                p=>
+                    p.style.display==="block"
+            );
+
+        if(!panelOpen){
+
+            renderer.domElement
+                .requestPointerLock();
+        }
+    }
+);
+
+document.addEventListener(
+    "pointerlockchange",
+    ()=>{
+
+        locked=
+            document.pointerLockElement===
+            renderer.domElement;
+    }
+);
+
+document.addEventListener(
+    "mousemove",
+    e=>{
+
+        if(!locked)
+            return;
+
+        player.yaw-=
+            e.movementX*.0025;
+
+        player.pitch-=
+            e.movementY*.0025;
+
+        player.pitch=
+            Math.max(
+                -1.45,
+                Math.min(
+                    1.45,
+                    player.pitch
+                )
+            );
+    }
+);
+
+
+/* =========================================================
+   COLLISION
+   ========================================================= */
+
+const PLAYER_RADIUS=.28;
+const PLAYER_HEIGHT=1.75;
+
+function solid(x,y,z){
+
+    return !!getBlock(
+        Math.floor(x),
+        Math.floor(y),
+        Math.floor(z)
+    );
+}
+
+function canMoveTo(pos){
+
+    const r=PLAYER_RADIUS;
+
+    const points=[
+
+        [pos.x-r,pos.y,pos.z-r],
+        [pos.x+r,pos.y,pos.z-r],
+        [pos.x-r,pos.y,pos.z+r],
+        [pos.x+r,pos.y,pos.z+r],
+
+        [pos.x-r,pos.y+1,pos.z-r],
+        [pos.x+r,pos.y+1,pos.z-r],
+        [pos.x-r,pos.y+1,pos.z+r],
+        [pos.x+r,pos.y+1,pos.z+r]
+    ];
+
+    for(const p of points){
+
+        if(
+            solid(
+                p[0],
+                p[1],
+                p[2]
+            )
+        ){
+
+            return false;
+        }
+    }
+
+    return true;
+}
+
+function movePlayer(dx,dy,dz){
+
+    const p=
+        player.position.clone();
+
+    p.x+=dx;
+
+    if(
+        canMoveTo(p)
+    ){
+
+        player.position.x=p.x;
+    }
+
+    p.copy(
+        player.position
+    );
+
+    p.z+=dz;
+
+    if(
+        canMoveTo(p)
+    ){
+
+        player.position.z=p.z;
+    }
+
+    p.copy(
+        player.position
+    );
+
+    p.y+=dy;
+
+    if(
+        canMoveTo(p)
+    ){
+
+        player.position.y=p.y;
+
+        player.onGround=false;
+
+    }else{
+
+        if(dy<0){
+
+            player.onGround=true;
+        }
+
+        player.velocity.y=0;
+    }
+}
+
+
+/* =========================================================
+   RAYCAST
+   ========================================================= */
+
+const raycaster=
+    new THREE.Raycaster();
+
+function targetBlock(){
+
+    raycaster.setFromCamera(
+        new THREE.Vector2(0,0),
+        camera
+    );
+
+    const hits=
+        raycaster.intersectObjects(
+            [...visibleMeshes.values()],
+            false
+        );
+
+    if(!hits.length)
+        return null;
+
+    const hit=hits[0];
+
+    if(hit.distance>6)
+        return null;
+
+    return hit;
+}
+
+
+/* =========================================================
+   MINE
+   ========================================================= */
+
+function mine(){
+
+    const hit=
+        targetBlock();
+
+    if(!hit)
+        return;
+
+    const d=
+        hit.object.userData;
+
+    const type=
+        getBlock(
+            d.x,
+            d.y,
+            d.z
+        );
+
+    if(!type)
+        return;
+
+    removeBlock(
+        d.x,
+        d.y,
+        d.z
+    );
+
+    removeMesh(
+        d.x,
+        d.y,
+        d.z
+    );
+
+    addItem(
+        BLOCKS[type].drop,
+        1
+    );
+
+    /*
+      بعد إزالة البلوك قد تظهر
+      البلوكات التي كانت خلفه.
+    */
+
+    updateNearbyMeshes(
+        d.x,
+        d.y,
+        d.z
+    );
+
+    gainXP(2);
+
+    saveGame();
+}
+
+
+/* =========================================================
+   UPDATE NEARBY MESHES
+   ========================================================= */
+
+function updateNearbyMeshes(x,y,z){
+
+    const positions=[
+
+        [x,y,z],
+
+        [x+1,y,z],
+        [x-1,y,z],
+
+        [x,y+1,z],
+        [x,y-1,z],
+
+        [x,y,z+1],
+        [x,y,z-1]
+    ];
+
+    for(
+        const p of positions
+    ){
+
+        const bx=p[0];
+        const by=p[1];
+        const bz=p[2];
+
+        const type=
+            getBlock(
+                bx,
+                by,
+                bz
+            );
+
+        if(!type){
+
+            removeMesh(
+                bx,
+                by,
+                bz
+            );
+
+            continue;
+        }
+
+        if(
+            exposed(
+                bx,
+                by,
+                bz
+            )
+        ){
+
+            addMesh(
+                bx,
+                by,
+                bz,
+                type
+            );
+
+        }else{
+
+            removeMesh(
+                bx,
+                by,
+                bz
+            );
+        }
+    }
+}
+
+
+/* =========================================================
+   PLACE
+   ========================================================= */
+
+function place(){
+
+    const hit=
+        targetBlock();
+
+    if(!hit)
+        return;
+
+    const item=
+        hotbar[selectedSlot];
+
+    if(
+        !BLOCKS[item]
+    )
+        return;
+
+    if(
+        inventory[item]<=0
+    )
+        return;
+
+    const d=
+        hit.object.userData;
+
+    const n=
+        hit.face.normal;
+
+    const x=
+        d.x+
+        Math.round(n.x);
+
+    const y=
+        d.y+
+        Math.round(n.y);
+
+    const z=
+        d.z+
+        Math.round(n.z);
+
+    if(
+        getBlock(x,y,z)
+    )
+        return;
+
+    /*
+      منع وضع البلوك داخل جسم اللاعب
+    */
+
+    if(
+        x>=Math.floor(
+            player.position.x-.3
+        ) &&
+        x<=Math.floor(
+            player.position.x+.3
+        ) &&
+        z>=Math.floor(
+            player.position.z-.3
+        ) &&
+        z<=Math.floor(
+            player.position.z+.3
+        ) &&
+        y>=Math.floor(
+            player.position.y
+        ) &&
+        y<=Math.floor(
+            player.position.y+1
+        )
+    ){
+
+        return;
+    }
+
+    setBlock(
+        x,y,z,item
+    );
+
+    removeItem(
+        item,
+        1
+    );
+
+    updateNearbyMeshes(
+        x,y,z
+    );
+
+    saveGame();
+}
+
+
+/* =========================================================
+   FOOD
+   ========================================================= */
+
+function eat(){
+
+    if(
+        inventory.food<=0
+    ){
+
+        showMessage(
+            "مفيش أكل"
+        );
+
+        return;
+    }
+
+    inventory.food--;
+
+    player.hunger=
+        Math.min(
+            100,
+            player.hunger+25
+        );
+
+    player.hp=
+        Math.min(
+            100,
+            player.hp+5
+        );
+
+    showMessage(
+        "أكلت"
+    );
+
+    updateUI();
+}
+
+
+/* =========================================================
+   XP
+   ========================================================= */
+
+function gainXP(amount){
+
+    player.xp+=amount;
+
+    const need=
+        player.level*100;
+
+    if(
+        player.xp>=need
+    ){
+
+        player.xp-=need;
+
+        player.level++;
+
+        player.hp=100;
+
+        player.hunger=100;
+
+        showMessage(
+            "وصلت للمستوى "+
+            player.level
+        );
+    }
+
+    updateUI();
+}
+
+
+/* =========================================================
+   ENEMIES
+   ========================================================= */
+
+const enemies=[];
+
+function createEnemy(
+    x,
+    y,
+    z,
+    boss=false
+){
+
+    const group=
+        new THREE.Group();
+
+    const material=
+        new THREE.MeshLambertMaterial({
+            color:
+                boss
+                ? 0x8c22d8
+                : 0x992222
+        });
+
+    const body=
+        new THREE.Mesh(
+            new THREE.BoxGeometry(
+                boss?1.5:.8,
+                boss?2.2:1.2,
+                boss?1.5:.8
+            ),
             material
         );
 
-    block.position.set(
+    body.position.y=
+        boss?1.1:.6;
+
+    group.add(body);
+
+    group.position.set(
         x,
         y,
         z
     );
 
-    scene.add(block);
+    scene.add(group);
 
-    blocks.push(block);
+    enemies.push({
 
-    return block;
+        mesh:group,
+
+        hp:
+            boss
+            ? 300
+            : 40,
+
+        boss:boss,
+
+        damage:
+            boss
+            ? 15
+            : 5,
+
+        speed:
+            boss
+            ? .7
+            : 1,
+
+        timer:0
+    });
 }
 
+function spawnEnemies(){
 
-// ======================================================
-// الأرض
-// ======================================================
-
-for (let x = -40; x <= 40; x += 2) {
-
-    for (let z = -40; z <= 40; z += 2) {
-
-        createBlock(
-            x,
-            -1,
-            z,
-            grassMaterial
-        );
-
-    }
-}
-
-
-// ======================================================
-// جدران تجريبية
-// ======================================================
-
-for (let x = -10; x <= 10; x += 2) {
-
-    createBlock(
-        x,
-        1,
-        -12,
-        stoneMaterial
+    createEnemy(
+        12,
+        heightAt(12,12)+1,
+        12
     );
 
-    createBlock(
-        x,
-        3,
-        -12,
-        stoneMaterial
-    );
-}
-
-
-// ======================================================
-// مبنى
-// ======================================================
-
-for (let x = -6; x <= 6; x += 2) {
-
-    createBlock(
-        x,
-        1,
-        -22,
-        woodMaterial
+    createEnemy(
+        -15,
+        heightAt(-15,8)+1,
+        8
     );
 
-    createBlock(
-        x,
-        3,
-        -22,
-        woodMaterial
+    createEnemy(
+        20,
+        heightAt(20,-15)+1,
+        -15
     );
 
-}
-
-
-for (let z = -22; z <= -12; z += 2) {
-
-    createBlock(
-        -6,
-        1,
-        z,
-        woodMaterial
-    );
-
-    createBlock(
-        6,
-        1,
-        z,
-        woodMaterial
-    );
-
-}
-
-
-// ======================================================
-// أشجار
-// ======================================================
-
-function createTree(x, z) {
-
-    createBlock(
-        x,
-        1,
-        z,
-        woodMaterial
-    );
-
-    createBlock(
-        x,
-        3,
-        z,
-        woodMaterial
-    );
-
-    createBlock(
-        x,
-        5,
-        z,
-        grassMaterial
-    );
-
-    createBlock(
-        x + 2,
-        5,
-        z,
-        grassMaterial
-    );
-
-    createBlock(
-        x - 2,
-        5,
-        z,
-        grassMaterial
-    );
-
-    createBlock(
-        x,
-        5,
-        z + 2,
-        grassMaterial
-    );
-
-    createBlock(
-        x,
-        5,
-        z - 2,
-        grassMaterial
+    createEnemy(
+        35,
+        heightAt(35,35)+1,
+        35,
+        true
     );
 }
 
+function updateEnemies(dt){
 
-createTree(15, -10);
-createTree(-15, -10);
-createTree(20, -25);
-createTree(-20, -25);
+    for(
+        let i=enemies.length-1;
+        i>=0;
+        i--
+    ){
 
+        const e=
+            enemies[i];
 
-// ======================================================
-// التحكم
-// ======================================================
+        const dx=
+            player.position.x-
+            e.mesh.position.x;
 
-const keys = {};
+        const dz=
+            player.position.z-
+            e.mesh.position.z;
 
-document.addEventListener(
-    "keydown",
-    function(event) {
+        const dist=
+            Math.sqrt(
+                dx*dx+
+                dz*dz
+            );
 
-        keys[event.key.toLowerCase()] = true;
+        if(
+            dist<30 &&
+            dist>1.6
+        ){
 
-        // منع Space من تحريك الصفحة
-        if (event.code === "Space") {
-            event.preventDefault();
+            e.mesh.position.x+=
+                dx/dist*
+                e.speed*
+                dt;
+
+            e.mesh.position.z+=
+                dz/dist*
+                e.speed*
+                dt;
+
+            e.mesh.lookAt(
+                player.position.x,
+                e.mesh.position.y,
+                player.position.z
+            );
         }
 
-        // F = طيران
-        if (
-            event.key.toLowerCase() === "f" &&
-            !event.repeat
-        ) {
+        e.timer-=dt;
 
-            flying = !flying;
+        if(
+            dist<2.1 &&
+            e.timer<=0
+        ){
 
-            document.getElementById(
-                "mode"
-            ).textContent =
-                flying
-                ? "الوضع: طيران"
-                : "الوضع: مشي";
-        }
+            player.hp-=e.damage;
 
-        // Ctrl = إظهار / إخفاء الماوس
-        if (
-            event.key === "Control" &&
-            !event.repeat
-        ) {
+            e.timer=
+                e.boss
+                ? 1.2
+                : 1.7;
 
-            mouseLocked = !mouseLocked;
+            if(
+                player.hp<=0
+            ){
 
-            if (mouseLocked) {
-
-                document.body.requestPointerLock();
-
-            } else {
-
-                document.exitPointerLock();
-
+                die();
             }
         }
     }
-);
-
-
-document.addEventListener(
-    "keyup",
-    function(event) {
-
-        keys[event.key.toLowerCase()] = false;
-
-    }
-);
-
-
-// ======================================================
-// حركة الماوس
-// ======================================================
-
-let yaw = 0;
-let pitch = 0;
-
-let mouseLocked = false;
-
-
-document.addEventListener(
-    "mousemove",
-    function(event) {
-
-        if (!mouseLocked)
-            return;
-
-        yaw -= event.movementX * 0.002;
-
-        pitch -= event.movementY * 0.002;
-
-        pitch = Math.max(
-            -Math.PI / 2 + 0.01,
-            Math.min(
-                Math.PI / 2 - 0.01,
-                pitch
-            )
-        );
-
-    }
-);
-
-
-// الضغط على الشاشة يقفل الماوس
-
-document.body.addEventListener(
-    "click",
-    function() {
-
-        if (!mouseLocked) {
-
-            mouseLocked = true;
-
-            document.body.requestPointerLock();
-
-        }
-
-    }
-);
-
-
-// ======================================================
-// اللاعب
-// ======================================================
-
-const player = {
-
-    width: 0.7,
-
-    height: 1.8,
-
-    depth: 0.7,
-
-    velocityY: 0,
-
-    onGround: false
-
-};
-
-
-let flying = false;
-
-
-// ======================================================
-// فحص التصادم
-// ======================================================
-
-function playerBox(
-    x,
-    y,
-    z
-) {
-
-    return new THREE.Box3(
-        new THREE.Vector3(
-            x - player.width / 2,
-            y,
-            z - player.depth / 2
-        ),
-
-        new THREE.Vector3(
-            x + player.width / 2,
-            y + player.height,
-            z + player.depth / 2
-        )
-    );
-
 }
 
 
-function collides(
-    x,
-    y,
-    z
-) {
+/* =========================================================
+   ATTACK
+   ========================================================= */
 
-    const box =
-        playerBox(x, y, z);
+function attack(){
 
-    for (const block of blocks) {
+    let nearest=null;
+    let best=3;
 
-        const blockBox =
-            new THREE.Box3().setFromObject(
-                block
+    for(
+        const e of enemies
+    ){
+
+        const d=
+            e.mesh.position.distanceTo(
+                player.position
             );
 
-        if (
-            box.intersectsBox(
-                blockBox
-            )
-        ) {
+        if(
+            d<best
+        ){
 
-            return true;
-
+            best=d;
+            nearest=e;
         }
-
     }
 
-    return false;
+    if(!nearest){
+
+        if(
+            hotbar[selectedSlot]==="hammer"
+        ){
+
+            mine();
+        }
+
+        return;
+    }
+
+    const item=
+        hotbar[selectedSlot];
+
+    const damage=
+        item==="sword"
+        ? 25
+        : 15;
+
+    nearest.hp-=damage;
+
+    showMessage(
+        "-"+damage+" HP"
+    );
+
+    if(
+        nearest.hp<=0
+    ){
+
+        const index=
+            enemies.indexOf(nearest);
+
+        scene.remove(
+            nearest.mesh
+        );
+
+        enemies.splice(
+            index,
+            1
+        );
+
+        if(
+            nearest.boss
+        ){
+
+            addItem(
+                "gold",
+                10
+            );
+
+            player.money+=500;
+
+            gainXP(200);
+
+            showMessage(
+                "هزمت الزعيم!"
+            );
+
+        }else{
+
+            addItem(
+                "food",
+                1
+            );
+
+            addItem(
+                "coal",
+                1
+            );
+
+            gainXP(20);
+        }
+    }
 }
 
 
-// ======================================================
-// محاولة الحركة مع التصادم
-// ======================================================
+/* =========================================================
+   LOOT PILES
+   ========================================================= */
 
-function moveWithCollision(
-    dx,
-    dy,
-    dz
-) {
+const lootPiles=[];
 
-    const oldX =
-        camera.position.x;
+function createLootVisual(pile){
 
-    const oldY =
-        camera.position.y;
+    const mesh=
+        new THREE.Mesh(
+            new THREE.BoxGeometry(
+                .6,.6,.6
+            ),
+            new THREE.MeshLambertMaterial({
+                color:0xffcc00
+            })
+        );
 
-    const oldZ =
-        camera.position.z;
+    mesh.position.set(
+        pile.x,
+        pile.y+.5,
+        pile.z
+    );
 
+    scene.add(mesh);
 
-    // الحركة الأفقية X
-    const newX =
-        oldX + dx;
+    pile.mesh=mesh;
+}
 
-    if (
-        !collides(
-            newX,
-            oldY - 1.8,
-            oldZ
-        )
-    ) {
+function dropInventory(){
 
-        camera.position.x = newX;
+    const items=[];
 
-    }
+    for(
+        const item in inventory
+    ){
 
+        if(
+            inventory[item]>0
+        ){
 
-    // الحركة الأفقية Z
-    const newZ =
-        oldZ + dz;
+            items.push({
+                item:item,
+                count:inventory[item]
+            });
 
-    if (
-        !collides(
-            camera.position.x,
-            oldY - 1.8,
-            newZ
-        )
-    ) {
-
-        camera.position.z = newZ;
-
-    }
-
-
-    // الحركة الرأسية
-    const newY =
-        oldY + dy;
-
-    if (
-        !collides(
-            camera.position.x,
-            newY - 1.8,
-            camera.position.z
-        )
-    ) {
-
-        camera.position.y = newY;
-
-        player.onGround = false;
-
-    } else {
-
-        if (dy < 0) {
-
-            player.onGround = true;
-
+            inventory[item]=0;
         }
-
-        player.velocityY = 0;
-
     }
 
+    if(!items.length)
+        return;
+
+    const pile={
+
+        x:player.position.x,
+
+        y:player.position.y,
+
+        z:player.position.z,
+
+        items:items,
+
+        mesh:null
+    };
+
+    lootPiles.push(pile);
+
+    createLootVisual(pile);
+}
+
+function pickupLoot(){
+
+    for(
+        let i=lootPiles.length-1;
+        i>=0;
+        i--
+    ){
+
+        const pile=
+            lootPiles[i];
+
+        if(!pile.mesh)
+            continue;
+
+        const d=
+            pile.mesh.position.distanceTo(
+                player.position
+            );
+
+        if(d<2){
+
+            for(
+                const item
+                of pile.items
+            ){
+
+                addItem(
+                    item.item,
+                    item.count
+                );
+            }
+
+            scene.remove(
+                pile.mesh
+            );
+
+            lootPiles.splice(
+                i,
+                1
+            );
+
+            showMessage(
+                "استعدت كل أغراضك"
+            );
+
+            saveGame();
+        }
+    }
 }
 
 
-// ======================================================
-// تحديث اللاعب
-// ======================================================
+/* =========================================================
+   DEATH
+   ========================================================= */
 
-function updatePlayer() {
+function die(){
 
-    const speed =
-        flying ? 0.22 : 0.12;
+    if(
+        document.getElementById(
+            "deathPanel"
+        ).style.display==="block"
+    )
+        return;
+
+    dropInventory();
+
+    player.hp=0;
+
+    document.getElementById(
+        "deathPanel"
+    ).style.display="block";
+
+    document.exitPointerLock?.();
+
+    saveGame();
+}
+
+function respawn(){
+
+    player.position.set(
+        0,
+        heightAt(0,0)+3,
+        0
+    );
+
+    player.velocity.set(
+        0,
+        0,
+        0
+    );
+
+    player.hp=100;
+
+    player.hunger=100;
+
+    document.getElementById(
+        "deathPanel"
+    ).style.display="none";
+
+    updateUI();
+
+    saveGame();
+}
 
 
-    const forward =
-        new THREE.Vector3(
-            -Math.sin(yaw),
-            0,
-            -Math.cos(yaw)
+/* =========================================================
+   PLAYER MOVEMENT
+   ========================================================= */
+
+function updatePlayer(dt){
+
+    let forward=0;
+    let right=0;
+
+    if(keys.KeyW)
+        forward++;
+
+    if(keys.KeyS)
+        forward--;
+
+    if(keys.KeyD)
+        right++;
+
+    if(keys.KeyA)
+        right--;
+
+    const length=
+        Math.hypot(
+            forward,
+            right
         );
 
+    if(length){
 
-    const right =
-        new THREE.Vector3(
-            Math.cos(yaw),
-            0,
-            -Math.sin(yaw)
-        );
-
-
-    let dx = 0;
-    let dz = 0;
-
-
-    if (keys["w"]) {
-
-        dx += forward.x * speed;
-        dz += forward.z * speed;
-
+        forward/=length;
+        right/=length;
     }
 
+    const speed=
+        keys.ShiftLeft
+        ? 7
+        : 4.5;
 
-    if (keys["s"]) {
+    const sin=
+        Math.sin(player.yaw);
 
-        dx -= forward.x * speed;
-        dz -= forward.z * speed;
+    const cos=
+        Math.cos(player.yaw);
 
-    }
+    const dx=
+        (
+            right*cos+
+            forward*sin
+        )*
+        speed*
+        dt;
 
+    const dz=
+        (
+            -right*sin+
+            forward*cos
+        )*
+        speed*
+        dt;
 
-    if (keys["d"]) {
+    if(
+        player.flying
+    ){
 
-        dx += right.x * speed;
-        dz += right.z * speed;
+        let dy=0;
 
-    }
+        if(keys.Space)
+            dy+=speed*dt;
 
+        if(keys.ShiftLeft)
+            dy-=speed*dt;
 
-    if (keys["a"]) {
-
-        dx -= right.x * speed;
-        dz -= right.z * speed;
-
-    }
-
-
-    // ==================================================
-    // الطيران
-    // ==================================================
-
-    if (flying) {
-
-        let dy = 0;
-
-        if (keys[" "]) {
-
-            dy += speed;
-
-        }
-
-        if (keys["shift"]) {
-
-            dy -= speed;
-
-        }
-
-        moveWithCollision(
+        movePlayer(
             dx,
             dy,
             dz
         );
 
-    }
+    }else{
 
-
-    // ==================================================
-    // المشي والجاذبية
-    // ==================================================
-
-    else {
-
-        player.velocityY -= 0.018;
-
-        // القفز
-        if (
-            keys[" "] &&
+        if(
+            keys.Space &&
             player.onGround
-        ) {
+        ){
 
-            player.velocityY = 0.32;
+            player.velocity.y=7.5;
 
-            player.onGround = false;
-
+            player.onGround=false;
         }
 
-        moveWithCollision(
+        player.velocity.y-=20*dt;
+
+        movePlayer(
             dx,
-            player.velocityY,
+            player.velocity.y*dt,
             dz
         );
 
+        if(
+            player.position.y<
+            -15
+        ){
+
+            die();
+        }
     }
-
-
-    // ==================================================
-    // دوران الكاميرا
-    // ==================================================
-
-    camera.rotation.order = "YXZ";
-
-    camera.rotation.y = yaw;
-
-    camera.rotation.x = pitch;
-
 }
 
 
-// ======================================================
-// بدء اللعبة
-// ======================================================
+/* =========================================================
+   CAMERA
+   ========================================================= */
 
-setTimeout(
-    function() {
+function updateCamera(){
 
+    const eye=
+        player.position.y+
+        1.55;
+
+    if(
+        !player.thirdPerson
+    ){
+
+        camera.position.set(
+            player.position.x,
+            eye,
+            player.position.z
+        );
+
+        camera.rotation.order="YXZ";
+
+        camera.rotation.y=
+            player.yaw;
+
+        camera.rotation.x=
+            player.pitch;
+
+    }else{
+
+        const distance=6;
+
+        const cp=
+            Math.cos(
+                player.pitch
+            );
+
+        const sp=
+            Math.sin(
+                player.pitch
+            );
+
+        const sy=
+            Math.sin(
+                player.yaw
+            );
+
+        const cy=
+            Math.cos(
+                player.yaw
+            );
+
+        camera.position.set(
+
+            player.position.x+
+            sy*cp*distance,
+
+            eye-
+            sp*distance,
+
+            player.position.z+
+            cy*cp*distance
+        );
+
+        camera.lookAt(
+            player.position.x,
+            eye,
+            player.position.z
+        );
+    }
+}
+
+
+/* =========================================================
+   DAY / NIGHT
+   ========================================================= */
+
+let worldTime=0;
+
+function updateDayNight(dt){
+
+    worldTime+=
+        dt*.08;
+
+    const x=
+        Math.cos(worldTime)*80;
+
+    const y=
+        Math.sin(worldTime)*100;
+
+    sun.position.set(
+        x,
+        y,
+        40
+    );
+
+    const daylight=
+        Math.max(
+            .05,
+            Math.sin(worldTime)*.5+.5
+        );
+
+    hemi.intensity=
+        .25+
+        daylight*.75;
+
+    sun.intensity=
+        .2+
+        daylight*1.3;
+
+    const sky=
+        new THREE.Color();
+
+    sky.setHSL(
+        .56,
+        .65,
+        .16+
+        daylight*.5
+    );
+
+    scene.background.copy(
+        sky
+    );
+
+    scene.fog.color.copy(
+        sky
+    );
+}
+
+
+/* =========================================================
+   HUNGER
+   ========================================================= */
+
+let hungerTimer=0;
+
+function updateHunger(dt){
+
+    hungerTimer+=dt;
+
+    if(
+        hungerTimer>=5
+    ){
+
+        hungerTimer=0;
+
+        player.hunger--;
+
+        if(
+            player.hunger<=0
+        ){
+
+            player.hunger=0;
+
+            player.hp-=2;
+
+            if(
+                player.hp<=0
+            ){
+
+                die();
+            }
+        }
+
+        updateUI();
+    }
+}
+
+
+/* =========================================================
+   UI
+   ========================================================= */
+
+function updateUI(){
+
+    const hp=
+        Math.max(
+            0,
+            player.hp
+        );
+
+    const hunger=
+        Math.max(
+            0,
+            player.hunger
+        );
+
+    document.getElementById(
+        "hpFill"
+    ).style.width=
+        hp+"%";
+
+    document.getElementById(
+        "hungerFill"
+    ).style.width=
+        hunger+"%";
+
+    document.getElementById(
+        "hpText"
+    ).textContent=
+        `HP ${Math.floor(hp)}/100`;
+
+    document.getElementById(
+        "hungerText"
+    ).textContent=
+        `الجوع ${Math.floor(hunger)}/100`;
+
+    document.getElementById(
+        "level"
+    ).textContent=
+        player.level;
+
+    document.getElementById(
+        "xp"
+    ).textContent=
+        player.xp;
+
+    document.getElementById(
+        "money"
+    ).textContent=
+        player.money;
+
+    document.getElementById(
+        "mode"
+    ).textContent=
+        player.flying
+        ? "طيران"
+        : "الأرض";
+
+    drawHotbar();
+}
+
+
+/* =========================================================
+   MESSAGE
+   ========================================================= */
+
+let messageTimeout;
+
+function showMessage(text){
+
+    const el=
         document.getElementById(
-            "loading"
-        ).style.display = "none";
+            "message"
+        );
 
-    },
-    1000
+    el.textContent=text;
+
+    el.style.opacity="1";
+
+    clearTimeout(
+        messageTimeout
+    );
+
+    messageTimeout=
+        setTimeout(
+            ()=>{
+                el.style.opacity="0";
+            },
+            1300
+        );
+}
+
+
+/* =========================================================
+   SAVE
+   ========================================================= */
+
+function saveGame(){
+
+    try{
+
+        const data={
+
+            player:{
+
+                x:player.position.x,
+                y:player.position.y,
+                z:player.position.z,
+
+                hp:player.hp,
+                hunger:player.hunger,
+
+                level:player.level,
+                xp:player.xp,
+                money:player.money,
+
+                yaw:player.yaw
+            },
+
+            inventory:{
+                ...inventory
+            },
+
+            time:worldTime,
+
+            /*
+              نحفظ فقط البلوكات التي تغيرت
+              بدل حفظ العالم كله.
+            */
+
+            loot:lootPiles.map(
+                p=>({
+
+                    x:p.x,
+                    y:p.y,
+                    z:p.z,
+
+                    items:p.items
+                })
+            )
+        };
+
+        localStorage.setItem(
+            "FAHD_WORLD_SAVE",
+            JSON.stringify(data)
+        );
+
+    }catch(e){
+
+        console.error(
+            "Save failed:",
+            e
+        );
+    }
+}
+
+
+/* =========================================================
+   LOAD
+   ========================================================= */
+
+function loadGame(){
+
+    try{
+
+        const raw=
+            localStorage.getItem(
+                "FAHD_WORLD_SAVE"
+            );
+
+        if(!raw)
+            return;
+
+        const data=
+            JSON.parse(raw);
+
+        if(data.player){
+
+            player.position.set(
+                data.player.x,
+                data.player.y,
+                data.player.z
+            );
+
+            player.hp=
+                data.player.hp;
+
+            player.hunger=
+                data.player.hunger;
+
+            player.level=
+                data.player.level;
+
+            player.xp=
+                data.player.xp;
+
+            player.money=
+                data.player.money;
+
+            player.yaw=
+                data.player.yaw||0;
+        }
+
+        if(data.inventory){
+
+            for(
+                const item in data.inventory
+            ){
+
+                inventory[item]=
+                    data.inventory[item];
+            }
+        }
+
+        if(
+            Array.isArray(
+                data.loot
+            )
+        ){
+
+            for(
+                const p of data.loot
+            ){
+
+                const pile={
+
+                    x:p.x,
+                    y:p.y,
+                    z:p.z,
+
+                    items:p.items,
+
+                    mesh:null
+                };
+
+                lootPiles.push(
+                    pile
+                );
+
+                createLootVisual(
+                    pile
+                );
+            }
+        }
+
+        worldTime=
+            data.time||0;
+
+    }catch(e){
+
+        console.error(
+            "Load failed:",
+            e
+        );
+    }
+}
+
+
+/* =========================================================
+   MOUSE ACTION
+   ========================================================= */
+
+renderer.domElement.addEventListener(
+    "mousedown",
+    e=>{
+
+        if(!locked)
+            return;
+
+        if(e.button===0){
+
+            const item=
+                hotbar[selectedSlot];
+
+            if(item==="food"){
+
+                eat();
+
+            }else if(
+                item==="sword" ||
+                item==="hammer"
+            ){
+
+                attack();
+
+            }else{
+
+                mine();
+            }
+        }
+
+        if(e.button===2){
+
+            place();
+        }
+    }
+);
+
+renderer.domElement.addEventListener(
+    "contextmenu",
+    e=>e.preventDefault()
 );
 
 
-// ======================================================
-// تشغيل اللعبة
-// ======================================================
+/* =========================================================
+   RESIZE
+   ========================================================= */
 
-function animate() {
+addEventListener(
+    "resize",
+    ()=>{
 
-    requestAnimationFrame(
-        animate
-    );
+        camera.aspect=
+            innerWidth/
+            innerHeight;
 
-    updatePlayer();
+        camera.updateProjectionMatrix();
+
+        renderer.setSize(
+            innerWidth,
+            innerHeight
+        );
+    }
+);
+
+
+/* =========================================================
+   START
+   ========================================================= */
+
+generateWorld();
+
+loadGame();
+
+updateVisibleWorld();
+
+spawnEnemies();
+
+updateUI();
+
+
+/* =========================================================
+   GAME LOOP
+   ========================================================= */
+
+let last=
+    performance.now();
+
+let renderTimer=0;
+let saveTimer=0;
+
+function loop(now){
+
+    requestAnimationFrame(loop);
+
+    let dt=
+        (now-last)/1000;
+
+    last=now;
+
+    if(dt>.05)
+        dt=.05;
+
+    updatePlayer(dt);
+
+    updateCamera();
+
+    updateEnemies(dt);
+
+    updateHunger(dt);
+
+    updateDayNight(dt);
+
+    pickupLoot();
+
+    renderTimer+=dt;
+
+    if(
+        renderTimer>=1
+    ){
+
+        renderTimer=0;
+
+        updateVisibleWorld();
+    }
+
+    saveTimer+=dt;
+
+    if(
+        saveTimer>=10
+    ){
+
+        saveTimer=0;
+
+        saveGame();
+    }
 
     renderer.render(
         scene,
         camera
     );
-
 }
 
-animate();
+requestAnimationFrame(loop);
 
-
-// ======================================================
-// تغيير حجم الشاشة
-// ======================================================
-
-window.addEventListener(
-    "resize",
-    function() {
-
-        camera.aspect =
-            window.innerWidth /
-            window.innerHeight;
-
-        camera.updateProjectionMatrix();
-
-        renderer.setSize(
-            window.innerWidth,
-            window.innerHeight
-        );
-
-    }
+addEventListener(
+    "beforeunload",
+    saveGame
 );
 
 </script>
