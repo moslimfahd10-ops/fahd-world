@@ -1,1 +1,560 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FAHD WORLD</title>
 
+<style>
+body{
+    margin:0;
+    overflow:hidden;
+    background:#87ceeb;
+    font-family:Arial;
+}
+
+#info{
+    position:fixed;
+    top:10px;
+    left:10px;
+    z-index:10;
+    color:white;
+    background:rgba(0,0,0,.55);
+    padding:10px;
+    border-radius:8px;
+}
+
+#crosshair{
+    position:fixed;
+    left:50%;
+    top:50%;
+    transform:translate(-50%,-50%);
+    color:white;
+    font-size:25px;
+    z-index:5;
+}
+
+#stats{
+    position:fixed;
+    top:10px;
+    right:10px;
+    z-index:10;
+    color:white;
+    background:rgba(0,0,0,.55);
+    padding:10px;
+    border-radius:8px;
+}
+</style>
+</head>
+
+<body>
+
+<div id="info">
+WASD = حركة<br>
+Space = قفز<br>
+V = تغيير المنظور<br>
+E / Q = تغيير الشيء
+</div>
+
+<div id="crosshair">+</div>
+
+<div id="stats">
+❤️ الدم: <span id="health">100</span><br>
+🍖 الجوع: <span id="hunger">100</span><br>
+🎒 الشيء: <span id="item">سيف</span>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+
+<script>
+
+/* =========================
+   إنشاء العالم
+========================= */
+
+const scene = new THREE.Scene();
+
+scene.background = new THREE.Color(0x87ceeb);
+
+const camera = new THREE.PerspectiveCamera(
+    75,
+    window.innerWidth / window.innerHeight,
+    0.1,
+    1000
+);
+
+const renderer = new THREE.WebGLRenderer({
+    antialias:true
+});
+
+renderer.setSize(
+    window.innerWidth,
+    window.innerHeight
+);
+
+document.body.appendChild(renderer.domElement);
+
+
+/* =========================
+   الإضاءة
+========================= */
+
+const sun = new THREE.DirectionalLight(
+    0xffffff,
+    1.2
+);
+
+sun.position.set(50,100,50);
+scene.add(sun);
+
+const ambient = new THREE.AmbientLight(
+    0xffffff,
+    0.6
+);
+
+scene.add(ambient);
+
+
+/* =========================
+   الأرض
+========================= */
+
+const groundGeometry =
+    new THREE.BoxGeometry(100,2,100);
+
+const groundMaterial =
+    new THREE.MeshLambertMaterial({
+        color:0x55aa44
+    });
+
+const ground =
+    new THREE.Mesh(
+        groundGeometry,
+        groundMaterial
+    );
+
+ground.position.y = -1;
+
+scene.add(ground);
+
+
+/* =========================
+   الشخصية
+========================= */
+
+const player = new THREE.Group();
+
+scene.add(player);
+
+
+/* الجسم */
+
+const body = new THREE.Mesh(
+    new THREE.BoxGeometry(1,1.5,0.6),
+    new THREE.MeshLambertMaterial({
+        color:0x3366cc
+    })
+);
+
+body.position.y = 1.75;
+
+player.add(body);
+
+
+/* الرأس */
+
+const head = new THREE.Mesh(
+    new THREE.BoxGeometry(0.8,0.8,0.8),
+    new THREE.MeshLambertMaterial({
+        color:0xffcc99
+    })
+);
+
+head.position.y = 2.9;
+
+player.add(head);
+
+
+/* الرجل اليمنى */
+
+const leg1 = new THREE.Mesh(
+    new THREE.BoxGeometry(0.25,1,0.3),
+    new THREE.MeshLambertMaterial({
+        color:0x333333
+    })
+);
+
+leg1.position.set(-0.2,0.5,0);
+
+player.add(leg1);
+
+
+/* الرجل اليسرى */
+
+const leg2 = leg1.clone();
+
+leg2.position.x = 0.2;
+
+player.add(leg2);
+
+
+/* =========================
+   اليد/السلاح في المنظور الأول
+========================= */
+
+const firstPersonHand =
+    new THREE.Group();
+
+const hand = new THREE.Mesh(
+    new THREE.BoxGeometry(
+        0.25,
+        0.25,
+        0.6
+    ),
+    new THREE.MeshLambertMaterial({
+        color:0xffcc99
+    })
+);
+
+hand.position.set(
+    0.45,
+    -0.35,
+    -0.8
+);
+
+firstPersonHand.add(hand);
+
+
+/* السيف */
+
+const sword = new THREE.Mesh(
+    new THREE.BoxGeometry(
+        0.12,
+        0.12,
+        1.4
+    ),
+    new THREE.MeshLambertMaterial({
+        color:0xcccccc
+    })
+);
+
+sword.rotation.x = -0.3;
+
+sword.position.set(
+    0.45,
+    -0.15,
+    -1.2
+);
+
+firstPersonHand.add(sword);
+
+camera.add(firstPersonHand);
+
+scene.add(camera);
+
+
+/* =========================
+   الأشياء التي يحملها اللاعب
+========================= */
+
+const items = [
+    "سيف",
+    "فأس",
+    "معول",
+    "بلوك خشب",
+    "بلوك حجر"
+];
+
+let currentItem = 0;
+
+
+/* =========================
+   تغيير الشيء بـ E و Q
+========================= */
+
+document.addEventListener("keydown",(event)=>{
+
+    if(event.code === "KeyE"){
+
+        currentItem++;
+
+        if(currentItem >= items.length){
+            currentItem = 0;
+        }
+
+        changeItem();
+
+    }
+
+    if(event.code === "KeyQ"){
+
+        currentItem--;
+
+        if(currentItem < 0){
+            currentItem = items.length - 1;
+        }
+
+        changeItem();
+
+    }
+
+});
+
+
+function changeItem(){
+
+    document.getElementById("item").textContent =
+        items[currentItem];
+
+}
+
+
+/* =========================
+   التحكم
+========================= */
+
+const keys = {};
+
+document.addEventListener("keydown",(event)=>{
+    keys[event.code] = true;
+});
+
+document.addEventListener("keyup",(event)=>{
+    keys[event.code] = false;
+});
+
+
+/* =========================
+   موقع اللاعب
+========================= */
+
+player.position.set(0,0,0);
+
+let velocityY = 0;
+
+let onGround = true;
+
+
+/* =========================
+   منظور الكاميرا
+========================= */
+
+let thirdPerson = false;
+
+
+/* V يغير المنظور */
+
+document.addEventListener("keydown",(event)=>{
+
+    if(event.code === "KeyV"){
+
+        thirdPerson = !thirdPerson;
+
+    }
+
+});
+
+
+/* =========================
+   الدم والجوع
+========================= */
+
+let health = 100;
+let hunger = 100;
+
+
+/* ينقص الجوع ببطء شديد */
+
+setInterval(()=>{
+
+    if(hunger > 0){
+
+        hunger -= 0.2;
+
+    }
+
+    if(hunger <= 0){
+
+        hunger = 0;
+
+        /* الدم ينقص ببطء شديد فقط عندما الجوع صفر */
+
+        if(health > 0){
+
+            health -= 0.1;
+
+        }
+
+    }
+
+    document.getElementById("health").textContent =
+        Math.max(0,Math.floor(health));
+
+    document.getElementById("hunger").textContent =
+        Math.max(0,Math.floor(hunger));
+
+},3000);
+
+
+/* =========================
+   الحركة
+========================= */
+
+function movePlayer(){
+
+    const speed = 0.12;
+
+    if(keys["KeyW"]){
+        player.position.z -= speed;
+    }
+
+    if(keys["KeyS"]){
+        player.position.z += speed;
+    }
+
+    if(keys["KeyA"]){
+        player.position.x -= speed;
+    }
+
+    if(keys["KeyD"]){
+        player.position.x += speed;
+    }
+
+
+    /* القفز */
+
+    if(
+        keys["Space"] &&
+        onGround
+    ){
+
+        velocityY = 0.22;
+
+        onGround = false;
+
+    }
+
+
+    velocityY -= 0.012;
+
+    player.position.y += velocityY;
+
+
+    if(player.position.y <= 0){
+
+        player.position.y = 0;
+
+        velocityY = 0;
+
+        onGround = true;
+
+    }
+
+}
+
+
+/* =========================
+   الكاميرا
+========================= */
+
+function updateCamera(){
+
+    if(thirdPerson){
+
+        /* إظهار الشخصية */
+
+        body.visible = true;
+        head.visible = true;
+        leg1.visible = true;
+        leg2.visible = true;
+
+        firstPersonHand.visible = false;
+
+        camera.position.set(
+            player.position.x,
+            player.position.y + 3.5,
+            player.position.z + 6
+        );
+
+        camera.lookAt(
+            player.position.x,
+            player.position.y + 1.5,
+            player.position.z
+        );
+
+    }else{
+
+        /* منظور الشخص الأول */
+
+        body.visible = false;
+        head.visible = false;
+        leg1.visible = false;
+        leg2.visible = false;
+
+        firstPersonHand.visible = true;
+
+        camera.position.set(
+            player.position.x,
+            player.position.y + 2.4,
+            player.position.z
+        );
+
+        camera.lookAt(
+            player.position.x,
+            player.position.y + 2.4,
+            player.position.z - 10
+        );
+
+    }
+
+}
+
+
+/* =========================
+   تشغيل اللعبة
+========================= */
+
+function animate(){
+
+    requestAnimationFrame(animate);
+
+    movePlayer();
+
+    updateCamera();
+
+    renderer.render(
+        scene,
+        camera
+    );
+
+}
+
+animate();
+
+
+/* =========================
+   تغيير حجم الشاشة
+========================= */
+
+window.addEventListener(
+    "resize",
+    ()=>{
+
+        camera.aspect =
+            window.innerWidth /
+            window.innerHeight;
+
+        camera.updateProjectionMatrix();
+
+        renderer.setSize(
+            window.innerWidth,
+            window.innerHeight
+        );
+
+    }
+);
+
+</script>
+
+</body>
+</html>
