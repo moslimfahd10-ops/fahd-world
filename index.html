@@ -558,3 +558,86 @@ window.addEventListener(
 
 </body>
 </html>
+<script>
+
+// =========================
+// Mouse Look
+// =========================
+
+let yaw = 0;
+let pitch = 0;
+
+document.body.addEventListener("click", () => {
+    document.body.requestPointerLock();
+});
+
+document.addEventListener("mousemove", (event) => {
+
+    if (document.pointerLockElement !== document.body) return;
+
+    yaw -= event.movementX * 0.002;
+    pitch -= event.movementY * 0.002;
+
+    // منع الكاميرا من الدوران رأسًا على عقب
+    pitch = Math.max(
+        -Math.PI / 2 + 0.1,
+        Math.min(Math.PI / 2 - 0.1, pitch)
+    );
+});
+
+
+// =========================
+// الكاميرا
+// =========================
+
+function updateCamera(){
+
+    if(thirdPerson){
+
+        // إظهار الشخصية
+        body.visible = true;
+        head.visible = true;
+        leg1.visible = true;
+        leg2.visible = true;
+
+        firstPersonHand.visible = false;
+
+        // الكاميرا خلف الشخصية
+        const distance = 6;
+
+        camera.position.set(
+            player.position.x + Math.sin(yaw) * distance,
+            player.position.y + 3.2,
+            player.position.z + Math.cos(yaw) * distance
+        );
+
+        camera.lookAt(
+            player.position.x,
+            player.position.y + 1.5,
+            player.position.z
+        );
+
+    }else{
+
+        // منظور الشخص الأول
+        body.visible = false;
+        head.visible = false;
+        leg1.visible = false;
+        leg2.visible = false;
+
+        firstPersonHand.visible = true;
+
+        camera.position.set(
+            player.position.x,
+            player.position.y + 2.4,
+            player.position.z
+        );
+
+        camera.rotation.order = "YXZ";
+
+        camera.rotation.y = yaw;
+        camera.rotation.x = pitch;
+    }
+}
+
+</script>
